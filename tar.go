@@ -15,26 +15,13 @@ import (
 
 func NewProvider(r io.ReaderAt) (content.Provider, error) {
 	return &tarContentProvider{
-		rdr: &readerAtReader{ra: r},
-		ra:  r,
+		rdr: io.NewSectionReader(r, 0, 1<<63-1),
 	}, nil
 }
 
-type readerAtReader struct {
-	ra  io.ReaderAt
-	pos int64
-}
-
-func (r *readerAtReader) Read(p []byte) (n int, err error) {
-	n, err = r.ra.ReadAt(p, int64(r.pos))
-	r.pos += int64(n)
-	return
-}
-
 type tarContentProvider struct {
-	ra  io.ReaderAt
 	tar *tar.Reader
-	rdr *readerAtReader
+	rdr *io.SectionReader
 	idx map[digest.Digest]content.ReaderAt
 }
 
@@ -65,31 +52,37 @@ func (t *tarContentProvider) ReaderAt(ctx context.Context, desc v1.Descriptor) (
 			return nil, err
 		}
 
-		if hdr.Name == "blobs/" || !strings.HasPrefix(hdr.Name, "blobs/") {
-			if hdr.Name == "index.json" {
-				buf := make([]byte, hdr.Size)
-				if _, err := io.ReadFull(t.tar, buf); err != nil {
-					return nil, err
-				}
-				dgst := digest.FromBytes(buf)
-				rdr := &contentReaderAt{ra: bytes.NewReader(buf)}
-				t.addIdx(dgst, rdr)
-				if dgst == desc.Digest {
-					return rdr, nil
-				}
+		if hdr.Name == "index.json" {
+			buf := make([]byte, hdr.Size)
+			if _, err := io.ReadFull(t.tar, buf); err != nil {
+				return nil, err
 			}
+			dgst := digest.FromBytes(buf)
+			rdr := &contentReaderAt{ra: bytes.NewReader(buf)}
+			t.addIdx(dgst, rdr)
+			if dgst == desc.Digest {
+				return rdr, nil
+			}
+			continue
+		}
+
+		if hdr.Name == "blobs/" || !strings.HasPrefix(hdr.Name, "blobs/") {
 			// not a blob we care about
 			continue
 		}
 
 		split := strings.Split(hdr.Name, "/")
 		if len(split) != 3 {
-			// this shouldn't happen but just in case
+			// probably a digest name (e.g. "sha256")
 			continue
 		}
 
+		pos, err := t.rdr.Seek(0, io.SeekCurrent)
+		if err != nil {
+			return nil, fmt.Errorf("error getting reader offset: %w", err)
+		}
 		rdr := &contentReaderAt{
-			ra: io.NewSectionReader(t.ra, t.rdr.pos, hdr.Size),
+			ra: io.NewSectionReader(t.rdr, pos, hdr.Size),
 		}
 		t.addIdx(digest.Digest(split[1]+":"+split[2]), rdr)
 
