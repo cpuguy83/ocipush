@@ -89,9 +89,6 @@ type contentReaderAt struct {
 }
 
 func (b *contentReaderAt) ReadAt(p []byte, off int64) (n int, err error) {
-	defer func() {
-		log.G(context.Background()).WithField("off", off).WithError(err).WithField("read", n).WithField("total", b.rdr.Size()).Info("ReadAt")
-	}()
 	return b.rdr.ReadAt(p, off)
 }
 
