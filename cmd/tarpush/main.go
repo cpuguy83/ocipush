@@ -1,17 +1,18 @@
 package main
 
 import (
-	"archive/tar"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/log"
-	"github.com/cpuguy83/tarpush"
+	"github.com/cpuguy83/ocipush"
+	"github.com/cpuguy83/tar2go"
 	"github.com/opencontainers/go-digest"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
@@ -20,7 +21,7 @@ import (
 func main() {
 	log.L.Logger.SetLevel(logrus.TraceLevel)
 	if len(os.Args) != 3 {
-		fmt.Fprintln(os.Stderr, "usage: tarpush <remote> <path>")
+		fmt.Fprintln(os.Stderr, "usage: ocipush <remote> <path>")
 		os.Exit(1)
 	}
 	if err := do(os.Args[1], os.Args[2]); err != nil {
@@ -36,16 +37,14 @@ func do(ref, p string) error {
 	}
 	defer f.Close()
 
-	idx, data, err := getTarManifestIndex(f)
+	fs := tar2go.NewIndex(f).FS()
+
+	idx, data, err := getTarManifestIndex(fs)
 	if err != nil {
 		return fmt.Errorf("could not get manifest digest: %w", err)
 	}
 
-	if _, err := f.Seek(0, io.SeekStart); err != nil {
-		return fmt.Errorf("could not seek to start of tar file: %w", err)
-	}
-
-	cp, err := tarpush.NewProvider(f)
+	cp, err := ocipush.NewProvider(fs)
 	if err != nil {
 		return fmt.Errorf("could not create content provider from tar file: %w", err)
 	}
@@ -68,7 +67,7 @@ func do(ref, p string) error {
 		desc = v1.Descriptor{MediaType: idx.MediaType, Size: int64(len(data)), Digest: digest.FromBytes(data)}
 	}
 
-	err = tarpush.Push(context.Background(), cp, ref, desc)
+	err = ocipush.Push(context.Background(), cp, ref, desc)
 	if err != nil {
 		return fmt.Errorf("could not push tar file: %w", err)
 	}
@@ -113,26 +112,15 @@ func (p *providerWrap) ReaderAt(ctx context.Context, desc v1.Descriptor) (conten
 	return p.p.ReaderAt(ctx, desc)
 }
 
-func getTarManifestIndex(rdr io.Reader) (v1.Index, []byte, error) {
-	tarRdr := tar.NewReader(rdr)
-	for {
-		hdr, err := tarRdr.Next()
-		if err != nil {
-			return v1.Index{}, nil, err
-		}
-
-		if hdr.Name != "index.json" {
-			continue
-		}
-		data, err := io.ReadAll(tarRdr)
-		if err != nil {
-			return v1.Index{}, nil, err
-		}
-
-		var idx v1.Index
-		if err := json.Unmarshal(data, &idx); err != nil {
-			return v1.Index{}, nil, fmt.Errorf("could not unmarshal manifest index: %w", err)
-		}
-		return idx, data, nil
+func getTarManifestIndex(ociFS fs.FS) (v1.Index, []byte, error) {
+	data, err := fs.ReadFile(ociFS, "index.json")
+	if err != nil {
+		return v1.Index{}, nil, fmt.Errorf("could not read index.json: %w", err)
 	}
+
+	var idx v1.Index
+	if err := json.Unmarshal(data, &idx); err != nil {
+		return v1.Index{}, nil, fmt.Errorf("could not unmarshal manifest index: %w", err)
+	}
+	return idx, data, nil
 }
