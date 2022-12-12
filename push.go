@@ -49,6 +49,7 @@ type FsProvider struct {
 	Fs fs.FS
 }
 
+// ReaderAt implements containerd's content.Provider interface.
 func (p *FsProvider) ReaderAt(ctx context.Context, desc v1.Descriptor) (content.ReaderAt, error) {
 	f, err := p.Fs.Open("blobs/" + desc.Digest.Algorithm().String() + "/" + desc.Digest.Encoded())
 	if err != nil {
