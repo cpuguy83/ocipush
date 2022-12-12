@@ -7,8 +7,8 @@ github.com/containerd/containerd v1.7.0-beta.0.0.20221212180621-2a76a1e78de8 h1:
 github.com/containerd/containerd v1.7.0-beta.0.0.20221212180621-2a76a1e78de8/go.mod h1:feSGk4iVYwaY0l5O8KB4nIEF/gMHdCB8iB0+a5WChgY=
 github.com/cpuguy83/dockercfg v0.3.1 h1:/FpZ+JaygUR/lZP2NlFI2DVfrOEMAIKP5wWEJdoYe9E=
 github.com/cpuguy83/dockercfg v0.3.1/go.mod h1:sugsbF4//dDlL/i+S+rtpIWp+5h0BHJHfjj5/jFyUJc=
-github.com/cpuguy83/tar2go v0.1.2 h1:RQ1RE8mp4hdBGW3Q47rqVT36+Iq9ZzteR/jATYpXYJ8=
-github.com/cpuguy83/tar2go v0.1.2/go.mod h1:2Ys2/Hu+iPHQRa4DjIVJ7UAaKnDhAhNACeK3A0Rr5rM=
+github.com/cpuguy83/tar2go v0.1.3 h1:dKPKwIzIzy4sp0Ck59Kizo5tovgUb4zkPbkNF9PAuDw=
+github.com/cpuguy83/tar2go v0.1.3/go.mod h1:2Ys2/Hu+iPHQRa4DjIVJ7UAaKnDhAhNACeK3A0Rr5rM=
 github.com/cyphar/filepath-securejoin v0.2.3 h1:YX6ebbZCZP7VkM3scTTokDgBL2TY741X51MTk3ycuNI=
 github.com/cyphar/filepath-securejoin v0.2.3/go.mod h1:aPGpWjXOXUn2NCNjFvBE6aRxGGx79pTxQpKOJNYHHl4=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

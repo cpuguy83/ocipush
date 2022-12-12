@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/containerd/containerd v1.7.0-beta.0.0.20221212180621-2a76a1e78de8
 	github.com/cpuguy83/dockercfg v0.3.1
-	github.com/cpuguy83/tar2go v0.1.2
+	github.com/cpuguy83/tar2go v0.1.3
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b
 	github.com/sirupsen/logrus v1.9.0
